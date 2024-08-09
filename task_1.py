@@ -10,6 +10,7 @@ parser = argparse.ArgumentParser(description="Produce HF Lumi")
 #напсиать bash скрипт для оптимизации чтения из всех файлов
 parser.add_argument("-f", "--file", default="", help="The path the file") #выбор файла для чтения из консоли
 parser.add_argument("-o", "--output", default="", help="The name of the output file") #написать pileup
+parser.add_argument("-p", "--pileup", default="", help="The pileup value") #написать pileup
 parser.add_argument("-d", "--depth", default="1", help="The depth of the fiber: 1, long; 2, short") #использую пока на default
 args = parser.parse_args()
 
@@ -50,7 +51,7 @@ newtree.Branch("ADC_32", ADC_32, "ADC_32[nCh_32]/i")
 for ievt in range(nevts):
     print(ievt)
     ttree.GetEntry(ievt)
-#    PU[0] = ttree.PU #дает ошибку #'TChain' object has no attribute 'PU'.
+    PU[0] = float(args.pileup) # по умолчанию питон вычитывает из терминала string
     etsum=0
     etsum_sub = 0
     Neta = ttree.QIE10DigiIEta.size()
