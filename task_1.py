@@ -26,13 +26,11 @@ print("OUTPUTS - HF", outputs)
 print("File names - ", filenames)
 #tfile = ROOT.TFile.Open(filename)
 
-ttree = ROOT.TChain("hcalTupleTree/tree")
 i = 0 
 for i in range (len(filenames)):
+        ttree = ROOT.TChain("hcalTupleTree/tree")
         ttree.AddFile(filenames[i])
-
         #ttree = tfile.Get("hcalTupleTree/tree")
-
         nevts = ttree.GetEntries()
         print (nevts)
         PU = array.array('f', [0])
