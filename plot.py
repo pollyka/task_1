@@ -4,16 +4,22 @@ import math
 
 from math import log10
 
-sys.path.append('/work_dir/task_1/')
+# sys.path.append('/work_dir/task_1/')
 import ROOT
 from ROOT import gStyle
+
+
+dictiInputFileO = {
+     'o_1':'output.root',
+}
+
 
 gStyle.SetOptStat(ROOT.kFALSE)
 
 parser = argparse.ArgumentParser()
 
 parser.add_argument("-f", "--file", help="The root file of the TProfile")
-parser.add_argument("-l", "--label", help="The label of the output file")
+
 
 args = parser.parse_args()
 
@@ -23,8 +29,10 @@ can.SetTicky()
 can.SetLeftMargin(0.15)
 can.SetBottomMargin(0.15)
 can.cd()
-filename = args.file
-tfile = ROOT.TFile(filename)
+
+
+filename = args.file.split()
+tfile = ROOT.TFile(dictiInputFileO[filename[0]])
 
 text = ROOT.TLatex(0.18, 0.82, "CMS #bf{#scale[0.75]{#it{Simulation Preliminary}}}")
 text.SetNDC()
@@ -61,8 +69,8 @@ text.Draw("SAME")
 
 
 
-can.SaveAs('HFOC_Phase2_'+args.label+'.pdf')
-can.SaveAs('HFOC_Phase2_'+args.label+'.png')
+can.SaveAs('HFOC_Phase2_result.pdf')
+can.SaveAs('HFOC_Phase2_result.png')
 
 
 can.Update()
@@ -78,8 +86,8 @@ text.SetTextSize(0.05)
 text.SetTextFont(62)
 text.Draw("SAME")
 
-can.SaveAs('HFOC_Phase2_'+args.label+'_zoom.pdf')
-can.SaveAs('HFOC_Phase2_'+args.label+'_zoom.png')
+can.SaveAs('HFOC_Phase2_result_zoom.pdf')
+can.SaveAs('HFOC_Phase2_result_zoom.png')
 
 can.Update()
 
@@ -122,8 +130,8 @@ text.SetTextFont(62)
 text.Draw("SAME")
 
 
-can.SaveAs("HFOC_deviation_from_linear_Phase2_"+args.label+".pdf")
-can.SaveAs("HFOC_deviation_from_linear_Phase2_"+args.label+".png")
+can.SaveAs("HFOC_deviation_from_linear_Phase2_result.pdf")
+can.SaveAs("HFOC_deviation_from_linear_Phase2_result.png")
 
 can.Update()
 gra_pu.Draw("APE0Z")
@@ -137,5 +145,5 @@ text.SetTextSize(0.05)
 text.SetTextFont(62)
 text.Draw("SAME")
 
-can.SaveAs("HFOC_deviation_from_linear_Phase2_"+args.label+"_Zoom.pdf")
-can.SaveAs("HFOC_deviation_from_linear_Phase2_"+args.label+"_Zoom.png")
+can.SaveAs("HFOC_deviation_from_linear_Phase2_result_Zoom.pdf")
+can.SaveAs("HFOC_deviation_from_linear_Phase2_result_Zoom.png")
