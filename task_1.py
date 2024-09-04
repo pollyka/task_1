@@ -4,6 +4,7 @@ import numpy
 import argparse 
 import array 
 from math import fabs 
+import ostap.fitting.roofit
 
 dictInputFileN = {
      'n_05':'HF0.5.root',
@@ -38,48 +39,30 @@ dictPileup = {
 }
 
 
-dictiInputFileO = {
-     '':'',
-}
-o_05='HF_0.5.root'
-o_1='HF_1.0.root'
-o_2='HF_2.0.root'
-o_10='HF_10.0.root'
-o_30='HF_30.0.root'
-o_50='HF_50.0.root'
-o_75='HF_75.0.root'
-o_100='HF_100.0.root'
-o_120='HF_120.0.root'
-o_140='HF_140.0.root'
-o_160='HF_160.0.root'
-o_180='HF_180.0.root'
-o_200='HF_200.0.root'
 
 parser = argparse.ArgumentParser(description="Produce HF Lumi")
 
-
-# parser.add_argument("-f", "--file", nargs = "+", default="", help="The path the file") #выбор файла для чтения из консоли
-# parser.add_argument("-o", "--output", nargs = "+", default="", help="The name of the output file") #написать pileup
-# parser.add_argument("-d", "--depth", default="1", help="The depth of the fiber: 1, long; 2, short") #использую пока на default
-# parser.add_argument("-p", "--pileup", nargs = "+", default="", help="The pileup value") #написать pileup
-
-
 parser.add_argument("-f", "--file", default="", help="The path the file") #выбор файла для чтения из консоли
-#parser.add_argument("-o", "--output", default="", help="The name of the output file") #написать pileup
 parser.add_argument("-d", "--depth", default="1", help="The depth of the fiber: 1, long; 2, short") #использую пока на default
 parser.add_argument("-p", "--pileup", default="", help="The pileup value") #написать pileup
+parser.add_argument("-t", "--threshold", default="", help="The threshold")
 
 args = parser.parse_args()
 
 depth = int(args.depth)
 
 filenames = args.file.split()
-#outputs = args.output.split()
 pileups = args.pileup.split()
+thresholds = args.threshold
 
 print("OUTPUTS - HF", pileups)
 print("File names - ", filenames)
 #tfile = ROOT.TFile.Open(filename)
+
+
+Mean_list = array.array('d', [])
+PU_list = array.array('d', [])
+
 
 i = 0 
 for i in range (len(filenames)):
@@ -97,10 +80,9 @@ for i in range (len(filenames)):
         ADC_31 = array.array('I', 1000*[0]) # "I" - signed long (int)
         ADC_32 = array.array('I', 1000*[0])
 
-        PU[0] = float(dictPileup[pileups[i]])
-        print("Pileups:", PU[0], " - done!")
-
-        fout = ROOT.TFile("HF_"+str(PU[0])+".root", "RECREATE")
+        
+        PU[0] = float(dictPileup[pileups[i]]) #записывает 0
+        fout = ROOT.TFile("HF_"+str(PU[0])+"_"+thresholds+"_.root", "RECREATE")
         newtree = ROOT.TTree("HFtree", "HFtree")
         newtree.Branch("PU", PU, "PU/D")
         newtree.Branch("ET_sum", ET_sum, "ET_sum/D")
@@ -110,6 +92,7 @@ for i in range (len(filenames)):
         newtree.Branch("ADC_31", ADC_31, "ADC_31[nCh_31]/i")
         newtree.Branch("ADC_32", ADC_32, "ADC_32[nCh_32]/i")
 
+
         for ievt in range(nevts):
             #print(ievt)
 
@@ -117,16 +100,16 @@ for i in range (len(filenames)):
             etsum=0
             etsum_sub = 0
             Neta = ttree.QIE10DigiIEta.size()
-            #print("вывод Neta", Neta)
             N31 = 0
             N32 = 0
+            
             for ieta in range(Neta):
                 if fabs(ttree.QIE10DigiIEta.at(ieta))==31 or fabs(ttree.QIE10DigiIEta.at(ieta))==32:
                     nchannel = ttree.QIE10DigiFC.at(ieta).size()
                     curreta = fabs(ttree.QIE10DigiIEta.at(ieta))
                     for ich in range(nchannel):
                         etsum+=ttree.QIE10DigiFC.at(ieta).at(ich)
-                        if ttree.QIE10DigiADC.at(ieta).at(ich)>7: 
+                        if ttree.QIE10DigiADC.at(ieta).at(ich)>int(thresholds):
                             etsum_sub+=ttree.QIE10DigiFC.at(ieta).at(ich)
                         if ttree.QIE10DigiDepth.at(ieta)!=depth: continue
                         if curreta==31:
@@ -136,13 +119,33 @@ for i in range (len(filenames)):
                             ADC_32[N32] = ttree.QIE10DigiADC.at(ieta).at(ich)
                             N32+=1
                         
+                        
 
             nCh_31[0] = N31
             nCh_32[0] = N32
             ET_sum[0]=etsum
             ET_sum_sub[0]=etsum_sub
-            #print("Puleups:", PU[0])
             newtree.Fill()
+            
+        PU_list.append(float(dictPileup[pileups[i]]))
+        a = newtree.ET_sum_sub
+        Mean_list.append(a)
+        print(a)
         fout.WriteTObject(newtree, "HFtree")
         fout.Close()
+        print("Pileups:", PU[0], " - done!")
         i+=1
+   
+#print(Mean_list, PU_list)
+
+fout_2 = ROOT.TFile("result"+thresholds+".root", "RECREATE")
+сanv = ROOT.TCanvas("canv", "Graph", 800, 600)
+gra_HFOC = ROOT.TGraph(int(len(PU_list)), PU_list, Mean_list)
+gra_HFOC.SetTitle("Graph; PileUp; SumSub")
+gra_HFOC.Draw("*")
+fit1 = ROOT.TF1("f1", "[0]+[1]*x")
+gra_HFOC.Fit(fit1)
+fout_2.WriteTObject(gra_HFOC, "gra_HFOC")
+fout_2.Close()
+print("DONE!")
+
